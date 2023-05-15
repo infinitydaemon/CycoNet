@@ -5,19 +5,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-# GPIO pin numbers for each Raspberry Pi device
-device_pins = {
-    'pi1': 17,
-    'pi2': 18,
-    'pi3': 19,
-    'pi4': 20,
-    'pi5': 21
-}
-
-# Initialize GPIO
-GPIO.setmode(GPIO.BCM)
-for pin in device_pins.values():
-    GPIO.setup(pin, GPIO.OUT)
+# GPIO and device monitoring code here...
 
 def check_reachability(ip):
     result = subprocess.call(['ping', '-c', '1', ip])
@@ -43,8 +31,8 @@ def monitor_devices():
                 GPIO.output(pin, GPIO.HIGH)
                 print(f'{device} powered on.')
 
-        # Wait for 1 minute before checking again
-        time.sleep(60)
+        # Wait for 5 minutes before checking again
+        time.sleep(300)
 
 def send_email_notification():
     sender_email = 'your_email@your_domain.com'  # Replace with your email address
@@ -72,7 +60,8 @@ def send_email_notification():
         smtp.send_message(msg)
 
 try:
-    monitor_devices()
-    send_email_notification()
+    while True:
+        monitor_devices()
+        send_email_notification()
 except KeyboardInterrupt:
     GPIO.cleanup()
