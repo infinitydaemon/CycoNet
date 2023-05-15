@@ -4,7 +4,7 @@ import time
 import smtplib
 from email.mime.text import MIMEText
 
-# GPIO pin numbers for each Raspberry Pi device
+# GPIO pin numbers for each device
 device_pins = {
     'pi1': 17,
     'pi2': 18,
