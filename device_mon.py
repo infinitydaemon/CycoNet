@@ -2,56 +2,49 @@
 import paramiko
 import time
 
-# SSH connection settings
-host = 'your_host'
-username = 'your_username'
-password = 'your_password'
-
-# Command to retrieve kernel logs
-kernel_log_command = 'tail -n 10 /var/log/kern.log'
-
-# Command to retrieve system logs
-system_log_command = 'tail -n 10 /var/log/syslog'
-
-def ssh_login(host, username, password):
-    # Create SSH client
+def connect_ssh(hostname, username, password):
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-
-    # Connect to the remote host
-    client.connect(host, username=username, password=password)
-
+    client.connect(hostname, username=username, password=password)
     return client
 
-def retrieve_logs(ssh_client, command):
-    # Execute command and retrieve logs
-    _, stdout, _ = ssh_client.exec_command(command)
-    logs = stdout.readlines()
-    return logs
+def get_kernel_logs(ssh_client):
+    _, stdout, _ = ssh_client.exec_command('dmesg --ctime')
+    kernel_logs = stdout.readlines()
+    return kernel_logs[-40:]
 
-def display_logs(logs):
-    # Display logs on the terminal
-    print('=== Logs ===')
-    for log in logs:
+def get_system_logs(ssh_client):
+    _, stdout, _ = ssh_client.exec_command('journalctl --since "10 seconds ago"')
+    system_logs = stdout.readlines()
+    return system_logs
+
+def print_logs(kernel_logs, system_logs):
+    print("Last 40 Kernel Logs:")
+    for log in kernel_logs:
         print(log.strip())
-    print()
+    print("\nLast System Logs:")
+    for log in system_logs:
+        print(log.strip())
 
-# SSH login
-ssh_client = ssh_login(host, username, password)
+def main():
+    hostname = 'your_hostname'
+    username = 'your_username'
+    password = 'your_password'
 
-try:
-    while True:
-        # Retrieve and display kernel logs
-        kernel_logs = retrieve_logs(ssh_client, kernel_log_command)
-        display_logs(kernel_logs)
+    try:
+        ssh_client = connect_ssh(hostname, username, password)
+        while True:
+            kernel_logs = get_kernel_logs(ssh_client)
+            system_logs = get_system_logs(ssh_client)
+            print_logs(kernel_logs, system_logs)
+            time.sleep(10)
+    except paramiko.AuthenticationException:
+        print("Authentication failed.")
+    except paramiko.SSHException as ssh_ex:
+        print(f"An error occurred: {ssh_ex}")
+    finally:
+        if ssh_client:
+            ssh_client.close()
 
-        # Retrieve and display system logs
-        system_logs = retrieve_logs(ssh_client, system_log_command)
-        display_logs(system_logs)
-
-        # Wait for 10 seconds before refreshing
-        time.sleep(10)
-
-except KeyboardInterrupt:
-    # Close SSH connection on keyboard interrupt
-    ssh_client.close()
+if __name__ == '__main__':
+    main()
