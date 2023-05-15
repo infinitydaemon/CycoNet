@@ -1,6 +1,8 @@
 import subprocess
 import RPi.GPIO as GPIO
 import time
+import smtplib
+from email.mime.text import MIMEText
 
 # GPIO pin numbers for each Raspberry Pi device
 device_pins = {
@@ -43,7 +45,26 @@ def monitor_devices():
         # Wait for 1 minute before checking again
         time.sleep(60)
 
+def send_email_notification():
+    sender_email = 'your_email@gmail.com'  # Replace with your email address
+    receiver_email = 'recipient_email@gmail.com'  # Replace with recipient's email address
+    subject = 'Device Monitoring Complete'
+    message = 'The device monitoring script has completed successfully.'
+
+    # Create the email message
+    msg = MIMEText(message)
+    msg['Subject'] = subject
+    msg['From'] = sender_email
+    msg['To'] = receiver_email
+
+    # Send the email
+    with smtplib.SMTP('smtp.gmail.com', 587) as smtp:
+        smtp.starttls()
+        smtp.login(sender_email, 'your_email_password')  # Replace with your email password
+        smtp.send_message(msg)
+
 try:
     monitor_devices()
+    send_email_notification()
 except KeyboardInterrupt:
     GPIO.cleanup()
